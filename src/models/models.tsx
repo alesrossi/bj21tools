@@ -1,6 +1,7 @@
 export class Card {
   name: string;
   value: number;
+  isFaceUp: boolean = true;
   constructor(name: string, value: number) {
     this.name = name;
     this.value = value;
