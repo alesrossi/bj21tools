@@ -18,6 +18,8 @@ export class Deck {
     for (let i = 0; i < 52; i++) {
       if (ranks[i % 13] > 10) {
         this.cards.push(new Card(suits[i % 4] + ranks[i % 13], 10));
+      } else if (ranks[i % 13] === 1) {
+        this.cards.push(new Card(suits[i % 4] + ranks[i % 13], 11));
       } else {
         this.cards.push(new Card(suits[i % 4] + ranks[i % 13], ranks[i % 13]));
       }

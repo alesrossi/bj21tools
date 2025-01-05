@@ -7,14 +7,37 @@ let newDeck: Deck;
 
 function App() {
   const [betAmount, setBetAmount] = useState<number>(0);
+  const [bankroll, setBankroll] = useState<number>(500);
   const [dealerCards, setDealerCards] = useState<Card[]>([]);
   const [playerCards, setPlayerCards] = useState<Card[]>([]);
+  const [playerTotal, setPlayerTotal] = useState<number>(0);
+  const [dealerTotal, setDealerTotal] = useState<number>(0);
 
   useEffect(() => {
     // Initialize newDeck when the component mounts
     newDeck = new Deck();
     newDeck.shuffle();
+  }, []);
 
+  useEffect(() => {
+    // Update totals whenever playerCards or dealerCards change
+    const playerTotal = playerCards.reduce((acc, card) => acc + card.value, 0);
+    const dealerTotal = dealerCards.reduce((acc, card) => acc + card.value, 0);
+
+    setPlayerTotal(playerTotal);
+    setDealerTotal(dealerTotal);
+  }, [playerCards, dealerCards]);
+
+  const raiseBet = (amount: number) => {
+    setBetAmount((prevBetAmount) => prevBetAmount + amount);
+    setBankroll((prevBankroll) => prevBankroll - amount);
+  };
+
+  const startRound = () => {
+    beginRound();
+  };
+
+  function beginRound() {
     // Deal the starting hands
     setPlayerCards([newDeck.draw()!]);
     setDealerCards([newDeck.draw()!]);
@@ -22,22 +45,24 @@ function App() {
     let dealerSecondCard = newDeck.draw()!;
     dealerSecondCard.isFaceUp = false;
     setDealerCards((prevCards) => [...prevCards, dealerSecondCard].slice(-5));
-  }, []);
+  }
 
-  const drawCard = () => {
-    let drawnCard = newDeck.draw();
-    if (drawnCard) {
-      setPlayerCards((prevCards) => [...prevCards, drawnCard].slice(-5)); // Keep only the last 5 cards
-      console.log(drawnCard.name);
-    } else {
-      console.log("No more cards in the deck");
+  useEffect(() => {
+    // Update totals whenever playerCards or dealerCards change
+    checkResult();
+  }, [playerTotal, dealerTotal]);
+
+  function checkResult() {
+    const playerTotal = playerCards.reduce((acc, card) => acc + card.value, 0);
+    const dealerTotal = dealerCards.reduce((acc, card) => acc + card.value, 0);
+
+    if (playerTotal === 21) {
+      setBankroll((prevBankroll) => prevBankroll + betAmount * 1.5);
+      setBetAmount(0);
+    } else if (dealerTotal === 21) {
+      setBetAmount(0);
     }
-  };
-
-  const raiseBet = (amount: number) => {
-    setBetAmount((prevBetAmount) => prevBetAmount + amount);
-    console.log(`Bet raised by ${amount}. Total bet: ${betAmount}`);
-  };
+  }
 
   return (
     <div className="flex flex-col h-screen p-4">
@@ -54,7 +79,20 @@ function App() {
           ))}
         </div>
       </div>
-      <div className="flex-grow"></div>
+      <div className="flex-grow flex items-center justify-center">
+        <button
+          className="m-2 p-2 bg-pink-300 text-white rounded"
+          onClick={startRound}
+        >
+          Start
+        </button>
+        <button className="m-2 p-2 bg-green-500 text-white rounded">
+          Stand
+        </button>
+        <button className="m-2 p-2 bg-red-500 text-white rounded">Hit</button>
+        <div>{playerTotal ? playerTotal : 0}</div>
+        <div>{dealerTotal ? dealerTotal : 0}</div>
+      </div>
       <div className="flex flex-col items-center mb-4">
         <h2 className="text-xl mb-2">Player's Zone</h2>
         <div className="flex space-x-2">
@@ -75,7 +113,9 @@ function App() {
       </div>
       <div className="fixed bottom-4 left-4 space-x-2">
         <div className="vertical space-y-2">
-          <p className="left-1">BET: {betAmount}</p>
+          <p className="left-1">
+            BET: {betAmount} BANKROLL: {bankroll}
+          </p>
           <div className="space-x-2">
             <button
               onClick={() => raiseBet(1)}
